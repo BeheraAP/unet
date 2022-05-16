@@ -21,34 +21,16 @@ I have tested this implementation on the following setup:
 - Void Linux
 
 ## Dataset
-For training and testing, the following DUTS dataset was used, which can be found
+For training and testing, the DUTS dataset was used, which can be found
 [here](http://saliencydetection.net/duts/). Download both `DUTS-TE.zip` and
 `DUTS-TR.zip` and extract it. The extracted directory names should be,
 
 - `DUTS-TE`
 - `DUTS-TR`
 
-and present in the project root. If you extract it in sub-directory or anywhere
+and must present in the project root. If you extract it in a sub-directory or anywhere
 else, you have to use the `-d` flag in `train.py`.
 
-#### Dataset error
-I faced some problem with the dataset. The mask should be a grayscale image, i.e,
-of shape `[1,H,W]` but for images are in sRGB colorspace, `[3,H,W]`. You can identify
-those images by issuing,
-
-```bash
-identify * | grep -vi Gray | awk '{print $1}'
-```
-
-`identify` is a tool that comes with the [ImageMagick](https://imagemagick.org/)
-package. And ImageMagick convert these images to Gray colorspace too:
-
-```bash
-for i in $(identify * | grep -vi Gray | awk '{print $1}'); do
-    convert $i -colorspace Gray $i;
-done
-```
-Run this command in the mask directory: `DUTS-TE-Mask` and `DUTS-TR-Mask`.
 
 ## Running UNet
 ### Setup
@@ -70,7 +52,8 @@ unzip DUTS-TR.zip DUT-TE.zip
 ```
 
 - Setup the environment. You may use your preferred virtual environment method.
-I use [mamba](https://mamba.readthedocs.io/en/latest/index.html) to manage it.
+I use [mamba](https://mamba.readthedocs.io/en/latest/index.html) to manage my
+virtual enviromnent.
 
 ```bash
 mamba create --name unet
@@ -141,12 +124,38 @@ $ python infer.py -ckpt ./output/final.pt -i example.jpg
 and this should output two images, `example-mk.jpg` and `example-fg.jpg` for the
 mask and masked foreground image in the same directory.
 
+## Results
+The network was trained on 3 Nvidia RTX 3080 Ti over a weekend for only 500 epochs
+and the following results were obtained.
+
+![result](./unet-result.png)
+
 ## Known issues
+### Output image is of smaller resolution
 The following issues are known and is being worked upon,
 
 - The output image is of size `[C, 512, 512]` no matter the input size. The channel
 `C`, is 1 for mask, `*-mk.jpg` and 3 for the backgound removed image, `*-fg.jpg`.
 
+### Dataset error
+I faced some problem with the dataset. The mask should be a grayscale image, i.e,
+of shape `[1,H,W]` but for images are in sRGB colorspace, `[3,H,W]`. You can identify
+those images by issuing,
+
+```bash
+identify * | grep -vi Gray | awk '{print $1}'
+```
+
+`identify` is a tool that comes with the [ImageMagick](https://imagemagick.org/)
+package. And ImageMagick convert these images to Gray colorspace too:
+
+```bash
+for i in $(identify * | grep -vi Gray | awk '{print $1}'); do
+    convert $i -colorspace Gray $i;
+done
+```
+
+Run this command in the mask directory: `DUTS-TE-Mask` and `DUTS-TR-Mask`.
 ## License
 The work is released in public domain. Feel free to use it with or without credit.
 I take no responsibility, whatsoever, for what you do with this code.

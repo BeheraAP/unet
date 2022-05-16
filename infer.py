@@ -3,6 +3,7 @@
 from unet import UNet
 from argparse import ArgumentParser
 import torch
+from torch import nn
 from torchvision.transforms import Compose, ToTensor, Resize
 from torchvision.utils import save_image
 
@@ -20,14 +21,17 @@ if args.i is None:
 	print("No image input. Use -i")
 	exit(1)
 
-un_model = UNet()
-un_model.load_state_dict(torch.load(args.ckpt))
+un_model = nn.DataParallel(UNet())
+un_model.load_state_dict(torch.load( args.ckpt
+	, map_location={'cuda:1':'cuda:0'}))
+	# , strict=False)
 un_model.eval()
 
 from PIL import Image
 pil_img = Image.open(args.i).convert('RGB')
 
-img = torch.unsqueeze(Compose([ToTensor(), Resize((512,512))])(pil_img),dim=0)
+img = torch.unsqueeze(
+	Compose([ToTensor(), Resize((512,512))])(pil_img),dim=0).to('cuda:0')
 out_img = un_model(img)
 msk_img = img*out_img
 save_image(out_img[0], "%s-mk.jpg"%args.i[:-4])
